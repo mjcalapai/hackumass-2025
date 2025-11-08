@@ -74,3 +74,16 @@ class Board:
     def check_winner(self):
         # easy condition stub: implement game-specific win logic
         return None
+
+    def to_dict(self):
+        pieces = []
+        for (row, col), piece in self.grid.items():
+            if piece is not None:
+                pieces.append({
+                    "id": f"{piece.__class__.__name__}_{row}_{col}",
+                    "type": piece.__class__.__name__,  # e.g. "Slinger"
+                    "color": piece.color,              # "white" / "black"
+                    "row": row,
+                    "col": col,
+                })
+        return {"pieces": pieces}
