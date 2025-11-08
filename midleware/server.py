@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from core_components.game_state import GameState
 from core_components.pieces import (
@@ -42,15 +43,34 @@ def setup_initial_positions():
         if not ok:
             print(f"[WARN] Failed to place {piece.__class__.__name__} at {pos}")
 
-    # Debug: show how many pieces made it onto the board
     piece_count = len(game.board.to_dict()["pieces"])
     print(f"[INIT] Placed {piece_count} pieces on the board.")
 
 
-# Run once at startup
 setup_initial_positions()
 
 
 @app.get("/api/board")
 def get_board():
     return game.board.to_dict()
+
+
+class MoveRequest(BaseModel):
+    start_row: int
+    start_col: int
+    end_row: int
+    end_col: int
+
+
+@app.post("/api/move")
+def make_move(move: MoveRequest):
+    ok = game.make_move(
+        (move.start_row, move.start_col),
+        (move.end_row, move.end_col),
+    )
+    # Always return current board + whose turn, even if move failed
+    return {
+        "ok": ok,
+        "board": game.board.to_dict(),
+        "turn": game.turn,
+    }
