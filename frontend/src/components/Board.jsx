@@ -18,11 +18,20 @@ const PIECE_SYMBOLS = {
   SeigeTower: "T",
 };
 
+const getPieceLabel = (piece) => {
+  return PIECE_SYMBOLS[piece.type] || "?";
+};
+
+const getPieceClasses = (piece) => {
+  return piece.color === "white" ? "text-white" : "text-black";
+};
+
 export default function Board() {
   const [selected, setSelected] = useState(null); // { row, col } or null
   const [pieces, setPieces] = useState([]);
   const [turn, setTurn] = useState("white");
   const [message, setMessage] = useState("");
+  const [winner, setWinner] = useState(null);
 
   // Load initial board
   useEffect(() => {
@@ -42,6 +51,9 @@ export default function Board() {
     pieces.find((p) => p.row === row && p.col === col);
 
   const handleSquareClick = (row, col) => {
+    // If game is over, ignore clicks
+    if (winner) return;
+
     const clickedPiece = getPieceAt(row, col);
 
     // If no selection yet:
@@ -76,15 +88,27 @@ export default function Board() {
       .then((res) => res.json())
       .then((data) => {
         console.log("MOVE RESULT:", data);
+
         if (data.ok) {
-          // Successful move -> update board from backend
           setPieces(data.board.pieces || []);
           setTurn(data.turn);
-          setMessage("");
+
+          if (data.winner) {
+            setWinner(data.winner);
+            setMessage(`Game over: ${data.winner.toUpperCase()} wins!`);
+          } else {
+            setMessage("");
+          }
         } else {
-          // Illegal move (backend rejected)
-          setMessage("Illegal move");
+          if (data.winner) {
+            // In case backend sets winner even on this response
+            setWinner(data.winner);
+            setMessage(`Game over: ${data.winner.toUpperCase()} wins!`);
+          } else {
+            setMessage("Illegal move");
+          }
         }
+
         setSelected(null);
       })
       .catch((err) => {
@@ -97,11 +121,23 @@ export default function Board() {
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="text-white text-sm">
-        Turn: <span className="font-bold capitalize">{turn}</span>
+        {winner ? (
+          <>
+            Winner:{" "}
+            <span className="font-bold capitalize">{winner}</span>
+          </>
+        ) : (
+          <>
+            Turn:{" "}
+            <span className="font-bold capitalize">{turn}</span>
+          </>
+        )}
       </div>
+
       {message && (
         <div className="text-yellow-300 text-xs h-4">{message}</div>
       )}
+
       <div className="grid grid-cols-8 gap-1 bg-blue-900/50 p-3 rounded-2xl shadow-xl border border-blue-400/50">
         {Array.from({ length: SIZE }).map((_, row) =>
           Array.from({ length: SIZE }).map((_, col) => {
@@ -126,8 +162,12 @@ export default function Board() {
                 `}
               >
                 {piece && (
-                  <span className="text-white font-extrabold text-[10px] text-center leading-tight select-none">
-                    {PIECE_SYMBOLS[piece.type] || "?"}
+                  <span
+                    className={`${getPieceClasses(
+                      piece
+                    )} font-extrabold text-[10px] text-center leading-tight select-none`}
+                  >
+                    {getPieceLabel(piece)}
                   </span>
                 )}
               </div>
