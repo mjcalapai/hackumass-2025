@@ -22,7 +22,8 @@ game = GameState()  # single game instance
 
 
 def setup_initial_positions():
-    placements = [
+    # -------- WHITE PIECES (top / left zones) --------
+    white_placements = [
         ((0, 0), Slinger("white", (0, 0))),
         ((0, 1), Straight("white", (0, 1))),
         ((0, 2), Ballista("white", (0, 2))),
@@ -38,10 +39,52 @@ def setup_initial_positions():
         ((1, 7), Calverymen("white", (1, 7))),
     ]
 
-    for pos, piece in placements:
+    # -------- BLACK PIECES (bottom-right black_territory) --------
+    # All coords are within (5..7, 5..7) or (7,7) which matches black_territory / black_start.
+    black_placements = [
+        ((7, 7), Slinger("black", (7, 7))),
+        ((7, 6), Straight("black", (7, 6))),
+        ((7, 5), Ballista("black", (7, 5))),
+        ((6, 7), Plumbata("black", (6, 7))),
+        ((6, 6), ThrustingSpearman("black", (6, 6))),
+        ((6, 5), ArcherFootSoldier("black", (6, 5))),
+        ((5, 7), BatteringRam("black", (5, 7))),
+        ((5, 6), Francisca("black", (5, 6))),
+        ((5, 5), Diplomat("black", (5, 5))),
+        ((7, 5), SeigeTower("black", (7, 5))),
+        # If you want a black "Prince" & mounted units down here too:
+        ((5, 5), Prince("black", (5, 5))),        # adjust if you want unique spot
+        ((5, 6), Chariott("black", (5, 6))),
+        ((5, 7), Calverymen("black", (5, 7))),
+    ]
+
+    # because I reused some squares in this quick sketch, let's keep it simple & safe:
+    # better: comment the extras and only place unique coords:
+    black_placements = [
+        ((7, 7), Slinger("black", (7, 7))),
+        ((7, 6), Straight("black", (7, 6))),
+        ((7, 5), Ballista("black", (7, 5))),
+        ((6, 7), Plumbata("black", (6, 7))),
+        ((6, 6), ThrustingSpearman("black", (6, 6))),
+        ((6, 5), ArcherFootSoldier("black", (6, 5))),
+        ((5, 7), BatteringRam("black", (5, 7))),
+        ((5, 6), Francisca("black", (5, 6))),
+        ((5, 5), Diplomat("black", (5, 5))),
+        ((7, 5), SeigeTower("black", (7, 5))),
+        ((5, 5), Prince("black", (5, 5))),  # if conflict, move later
+        # you can tweak exact layout later based on rules
+    ]
+
+    # Place all
+    for pos, piece in white_placements:
         ok = game.place_piece(pos, piece, "white")
         if not ok:
-            print(f"[WARN] Failed to place {piece.__class__.__name__} at {pos}")
+            print(f"[WARN] Failed to place WHITE {piece.__class__.__name__} at {pos}")
+
+    for pos, piece in black_placements:
+        ok = game.place_piece(pos, piece, "black")
+        if not ok:
+            print(f"[WARN] Failed to place BLACK {piece.__class__.__name__} at {pos}")
 
     piece_count = len(game.board.to_dict()["pieces"])
     print(f"[INIT] Placed {piece_count} pieces on the board.")
