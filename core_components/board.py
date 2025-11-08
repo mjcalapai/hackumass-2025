@@ -1,22 +1,13 @@
 '''Start/goal spots: White start (1,1), black start (8,8)
 White territory: (1,1) - (3,3) in a square, (2,7) - (1,8) in a square
-
 '''
 
 class Board:
     def __init__(self):
+        # grid is a dict keyed by (row, col) -> piece or None
         self.grid = self._board_setup()
-    
-    def _board_setup(self):
-        #initialize a grid 8x8
-        #tic tac toe logic with dictionary and pieces?
-        board = {}
-        #blank board, users picks
-        for row in range(8):
-            for col in range(8):
-                board[(row, col)] = None
-        return(board)
-    
+        # zones used for placement and special rules
+        self.zones = self._mark_zones()
 
     def _board_setup(self):
         board = {}
@@ -52,17 +43,34 @@ class Board:
 
         return zones
 
+    def get_piece(self, pos):
+        return self.grid.get(pos)
 
+    def place_piece(self, pos, piece, team):
+        """Place a piece at pos if the team is allowed to place there.
+
+        Returns True on success, False otherwise.
+        """
+        zone = self.zones.get(pos, "neutral")
+        if team == "white" and (zone == "white_territory" or zone == "white_start"):
+            self.grid[pos] = piece
+            piece.position = pos
+            return True
+        if team == "black" and (zone == "black_territory" or zone == "black_start"):
+            self.grid[pos] = piece
+            piece.position = pos
+            return True
+        print("Invalid placement: outside your zone.")
+        return False
 
     def move_piece(self, start, end):
-        # Validate and perform move
-        
-        piece = self.get_piece(start) #TODO get_piece()
+        """Validate and perform move if legal for the piece."""
+        piece = self.get_piece(start)
         if piece and end in piece.valid_moves(self):
             self.grid[end] = piece
             self.grid[start] = None
             piece.position = end
 
     def check_winner(self):
-        #easy condition, just check if another color piece is in the win square
-        pass
+        # easy condition stub: implement game-specific win logic
+        return None

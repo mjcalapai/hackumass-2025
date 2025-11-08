@@ -32,7 +32,7 @@ class Piece:
         return moves
 
 
-    def valid_moves(self, board, range):
+    def valid_moves(self, board, rng=8):
         raise NotImplementedError
     
 
@@ -100,8 +100,9 @@ class ArcherFootSoldier(Piece):
         return moves
 
 class Calverymen(Piece):
-    def valid_moves(self, board, range):
-        pass
+    def valid_moves(self, board, rng=8):
+        # Not implemented yet
+        return []
 
 class BatteringRam(Piece): 
     def valid_moves(self, board, rng=1):
@@ -137,7 +138,7 @@ class Diplomat(Piece): #is sapper a different piece than the diplomat
         return moves 
     
 class Prince(Piece):
-    def valid_moves(self, board, range):
+    def valid_moves(self, board, rng=1):
         return []
 
 class SeigeTower(Piece): # double check this implementation later with the ability
