@@ -229,7 +229,9 @@ export default function Board() {
               </div>
               <div>
                 <b>Ch</b> – Chariott:
-                <div>Line-based attacker; cannot pass through allies.</div>
+                <div>Line-based attacker; cannot pass through allies. Can only move if taking a piece of the 
+                  other color
+                </div>
               </div>
               <div>
                 <b>Pl</b> – Plumbata:
@@ -284,8 +286,6 @@ export default function Board() {
             </div>
 
             <p className="text-[11px] text-gray-600 mt-2">
-              Note: This reference matches the current MVP implementation.
-              Exact balance / abilities can be tuned without changing how players learn basics here.
             </p>
           </div>
         </div>
