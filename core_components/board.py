@@ -24,22 +24,27 @@ class Board:
             for c in range(8):
                 zones[(r, c)] = "neutral"  # default
 
-        # --- White territory (1,1)-(3,3) ---
+        # White main: (0..2, 0..2)
         for r in range(0, 3):
             for c in range(0, 3):
                 zones[(r, c)] = "white_territory"
 
-        # --- Additional white zone (1,7)-(2,8) human coords -> (0-1,6-7) ---
+        # White extra: top-right 2x2 -> (0..1, 6..7)
         for r in range(0, 2):
             for c in range(6, 8):
                 zones[(r, c)] = "white_territory"
 
-        # --- Black territory (mirror example) ---
+        # Black main: bottom-right 3x3 -> (5..7, 5..7)
         for r in range(5, 8):
             for c in range(5, 8):
                 zones[(r, c)] = "black_territory"
 
-        # --- Start/Goal spots ---
+        # Black extra: bottom-left 2x2 -> (6..7, 0..1)
+        for r in range(6, 8):
+            for c in range(0, 2):
+                zones[(r, c)] = "black_territory"
+
+        # Start/Goal
         zones[(0, 0)] = "white_start"
         zones[(7, 7)] = "black_start"
 
@@ -49,16 +54,13 @@ class Board:
         return self.grid.get(pos)
 
     def place_piece(self, pos, piece, team):
-        """Place a piece at pos if the team is allowed to place there.
-
-        Returns True on success, False otherwise.
-        """
+        """Place a piece at pos if the team is allowed to place there."""
         zone = self.zones.get(pos, "neutral")
-        if team == "white" and (zone == "white_territory" or zone == "white_start"):
+        if team == "white" and (zone in ("white_territory", "white_start")):
             self.grid[pos] = piece
             piece.position = pos
             return True
-        if team == "black" and (zone == "black_territory" or zone == "black_start"):
+        if team == "black" and (zone in ("black_territory", "black_start")):
             self.grid[pos] = piece
             piece.position = pos
             return True
@@ -68,17 +70,37 @@ class Board:
     def move_piece(self, start, end):
         """Perform move if legal for the piece (piece.valid_moves already checked)."""
         piece = self.get_piece(start)
-        if piece and end in piece.valid_moves(self):
-            self.grid[end] = piece
+        if not piece:
+            return
+
+        if end not in piece.valid_moves(self):
+            return
+
+        dest_piece = self.get_piece(end)
+
+        # Calverymen stacking
+        if (
+            getattr(piece, "is_calverymen", False)
+            and dest_piece
+            and getattr(dest_piece, "is_calverymen", False)
+            and dest_piece.color == piece.color
+        ):
+            src_stack = getattr(piece, "stack_size", 1)
+            dest_stack = getattr(dest_piece, "stack_size", 1)
+            new_stack = min(src_stack + dest_stack, 3)
+            dest_piece.stack_size = new_stack
             self.grid[start] = None
-            piece.position = end
+            return
+
+        # Normal move / capture
+        self.grid[end] = piece
+        self.grid[start] = None
+        piece.position = end
 
     def check_winner(self):
         """
-        Win condition:
-        - White wins if a white piece reaches black's goal (7,7).
-        - Black wins if a black piece reaches white's goal (0,0).
-        Returns "white", "black", or None.
+        White wins if a white piece reaches black's goal (7,7).
+        Black wins if a black piece reaches white's goal (0,0).
         """
         white_goal = (7, 7)
         black_goal = (0, 0)

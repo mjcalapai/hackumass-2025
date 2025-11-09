@@ -3,30 +3,114 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from core_components.game_state import GameState
+from core_components.pieces import (
+    Slinger,
+    Chariott,
+    Plumbata,
+    Ballista,
+    Straight,
+    ThrustingSpearman,
+    ArcherFootSoldier,
+    Calverymen,
+    BatteringRam,
+    Francisca,
+    Diplomat,
+    SeigeTower,
+)
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-game = GameState()  # single game instance for now
+game = GameState()
 
-@app.get("/state")
-def get_state():
-    snapshot = {}
-    for pos, piece in game.board.grid.items():
-        if piece:
-            snapshot[f"{pos[0]},{pos[1]}"] = {
-                "type": piece.__class__.__name__,
-                "color": piece.color,
-            }
-    return {"turn": game.turn, "board": snapshot}
 
-@app.post("/move")
-def make_move(start_row: int, start_col: int, end_row: int, end_col: int):
-    ok = game.make_move((start_row, start_col), (end_row, end_col))
-    return {"ok": ok}
+def setup_initial_positions():
+    # WHITE (13)
+    white_placements = [
+        # 3x3 main
+        ((0, 0), Slinger("white", (0, 0))),
+        ((0, 1), Plumbata("white", (0, 1))),
+        ((0, 2), Ballista("white", (0, 2))),
+        ((1, 0), ThrustingSpearman("white", (1, 0))),
+        ((1, 1), ArcherFootSoldier("white", (1, 1))),
+        ((1, 2), BatteringRam("white", (1, 2))),
+        ((2, 0), Francisca("white", (2, 0))),
+        ((2, 1), Diplomat("white", (2, 1))),
+        ((2, 2), SeigeTower("white", (2, 2))),
+        # 2x2 staging (top-right)
+        ((0, 6), Chariott("white", (0, 6))),
+        ((0, 7), Calverymen("white", (0, 7))),
+        ((1, 6), Calverymen("white", (1, 6))),
+        ((1, 7), Calverymen("white", (1, 7))),
+    ]
+
+    # BLACK (13), mirrored
+    black_placements = [
+        # 3x3 main bottom-right
+        ((7, 7), Slinger("black", (7, 7))),
+        ((7, 6), Plumbata("black", (7, 6))),
+        ((7, 5), Ballista("black", (7, 5))),
+        ((6, 7), ThrustingSpearman("black", (6, 7))),
+        ((6, 6), ArcherFootSoldier("black", (6, 6))),
+        ((6, 5), BatteringRam("black", (6, 5))),
+        ((5, 7), Francisca("black", (5, 7))),
+        ((5, 6), Diplomat("black", (5, 6))),
+        ((5, 5), SeigeTower("black", (5, 5))),
+        # 2x2 staging bottom-left
+        ((7, 0), Chariott("black", (7, 0))),
+        ((7, 1), Calverymen("black", (7, 1))),
+        ((6, 0), Calverymen("black", (6, 0))),
+        ((6, 1), Calverymen("black", (6, 1))),
+    ]
+
+    for pos, piece in white_placements:
+        ok = game.place_piece(pos, piece, "white")
+        if not ok:
+            print(f"[WARN] Failed to place WHITE {piece.__class__.__name__} at {pos}")
+
+    for pos, piece in black_placements:
+        ok = game.place_piece(pos, piece, "black")
+        if not ok:
+            print(f"[WARN] Failed to place BLACK {piece.__class__.__name__} at {pos}")
+
+    piece_count = len(game.board.to_dict()["pieces"])
+    print(f"[INIT] Placed {piece_count} pieces on the board.")
+
+
+class MoveRequest(BaseModel):
+    start_row: int
+    start_col: int
+    end_row: int
+    end_col: int
+
+
+@app.get("/api/board")
+def get_board():
+    return game.board.to_dict()
+
+
+@app.post("/api/move")
+def make_move(move: MoveRequest):
+    ok = game.make_move(
+        (move.start_row, move.start_col),
+        (move.end_row, move.end_col),
+    )
+    return {
+        "ok": ok,
+        "board": game.board.to_dict(),
+        "turn": game.turn,
+        "winner": game.winner,
+    }
+
+
+setup_initial_positions()
