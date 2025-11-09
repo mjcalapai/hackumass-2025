@@ -230,7 +230,7 @@ export default function Board() {
               <div>
                 <b>Ch</b> – Chariott:
                 <div>Line-based attacker; cannot pass through allies. Can only move if taking a piece of the 
-                  other color
+                  other color.
                 </div>
               </div>
               <div>
