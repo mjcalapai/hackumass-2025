@@ -100,9 +100,63 @@ class ArcherFootSoldier(Piece):
         return moves
 
 class Calverymen(Piece):
-    def valid_moves(self, board, rng=8):
-        # Not implemented yet
-        return []
+    def __init__(self, color, position, stack_size=1):
+        super().__init__(color, position)
+        # how many Calverymen are stacked here (1–3)
+        self.stack_size = max(1, min(stack_size, 3))
+        # marker so Board can detect this type without import cycles
+        self.is_calverymen = True
+
+    def _max_range(self):
+        """Map stack size to movement range."""
+        size = max(1, min(self.stack_size, 3))
+        if size == 1:
+            return 1
+        elif size == 2:
+            return 3
+        else:  # size >= 3
+            return 6
+
+    def valid_moves(self, board, rng=None):
+        """
+        Calverymen move up to N squares in any direction (8 dirs),
+        where N depends on stack_size (1, 3, 6).
+
+        Rules:
+        - Can move to empty squares.
+        - Can capture enemy pieces.
+        - Can move onto a same-color Calverymen square to STACK.
+        - Cannot move past any occupied square.
+        """
+        max_range = self._max_range()
+        moves = []
+
+        for dr, dc in DIRECTIONS["king"]:
+            for step in range(1, max_range + 1):
+                nr = self.position[0] + dr * step
+                nc = self.position[1] + dc * step
+
+                if not in_bounds(nr, nc):
+                    break
+
+                target = board.grid.get((nr, nc))
+
+                if target is None:
+                    # Empty square - always a valid landing spot
+                    moves.append((nr, nc))
+                else:
+                    # Occupied
+                    if getattr(target, "is_calverymen", False) and target.color == self.color:
+                        # Same-color Calverymen -> allowed (stack)
+                        moves.append((nr, nc))
+                    elif target.color != self.color:
+                        # Enemy piece -> capture allowed
+                        moves.append((nr, nc))
+
+                    # Stop in all occupied cases (can't move through units)
+                    break
+
+        return moves
 
 class BatteringRam(Piece): 
     def valid_moves(self, board, rng=1):

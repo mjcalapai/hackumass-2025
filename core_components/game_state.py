@@ -6,16 +6,33 @@ class GameState:
         self.board = Board()
         self.turn = "white"
         self.move_history = []
+        self.winner = None
 
     def make_move(self, start, end):
+        # If game already has a winner, ignore further moves
+        if self.winner is not None:
+            return False
+
         piece = self.board.get_piece(start)
         if piece and piece.color == self.turn:
+            #validate using piece logic
             if end in piece.valid_moves(self.board):
                 self.board.move_piece(start, end)
                 self.move_history.append((start, end))
+
+                # check for win after move
+                winner = self.board.check_winner()
+                if winner:
+                    self.winner = winner
+                    # do NOT switch turn after a winning move
+                    return True
+
+                # otherwise normal turn swap
                 self._switch_turn()
                 return True
+
         return False
+
     
     
 
