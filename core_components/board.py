@@ -1,5 +1,7 @@
-'''Start/goal spots: White start (1,1), black start (8,8)
-White territory: (1,1) - (3,3) in a square, (2,7) - (1,8) in a square
+'''Start/goal spots:
+White start (1,1) -> (0,0), black start (8,8) -> (7,7)
+White territory: (1,1)-(3,3) -> (0-2,0-2) and (2,7)-(1,8) -> (0-1,6-7)
+Black territory: mirror: (6,6)-(8,8) -> (5-7,5-7) and extra (7-8,1-2) -> (6-7,0-1)
 '''
 
 class Board:
@@ -22,24 +24,19 @@ class Board:
             for c in range(8):
                 zones[(r, c)] = "neutral"  # default
 
-        # --- White territory main (1,1)-(3,3) -> 0-2,0-2 ---
+        # --- White territory (1,1)-(3,3) ---
         for r in range(0, 3):
             for c in range(0, 3):
                 zones[(r, c)] = "white_territory"
 
-        # --- Additional white zone (1,7)-(2,8) -> 0-1,6-7 ---
+        # --- Additional white zone (1,7)-(2,8) human coords -> (0-1,6-7) ---
         for r in range(0, 2):
             for c in range(6, 8):
                 zones[(r, c)] = "white_territory"
 
-        # --- Black territory main (mirror) -> 5-7,5-7 ---
+        # --- Black territory (mirror example) ---
         for r in range(5, 8):
             for c in range(5, 8):
-                zones[(r, c)] = "black_territory"
-
-        # --- Black extra zone (mirror of white extra) bottom-left 2x2 -> 6-7,0-1 ---
-        for r in range(6, 8):
-            for c in range(0, 2):
                 zones[(r, c)] = "black_territory"
 
         # --- Start/Goal spots ---
@@ -69,33 +66,9 @@ class Board:
         return False
 
     def move_piece(self, start, end):
-        """Validate and perform move if legal for the piece."""
+        """Perform move if legal for the piece (piece.valid_moves already checked)."""
         piece = self.get_piece(start)
         if piece and end in piece.valid_moves(self):
-            dest_piece = self.get_piece(end)
-
-            # --- Special stacking logic for Calverymen ---
-            if (
-                getattr(piece, "is_calverymen", False)
-                and dest_piece
-                and getattr(dest_piece, "is_calverymen", False)
-                and dest_piece.color == piece.color
-            ):
-                # Combine stack sizes, max 3
-                src_stack = getattr(piece, "stack_size", 1)
-                dest_stack = getattr(dest_piece, "stack_size", 1)
-                new_stack = src_stack + dest_stack
-                if new_stack > 3:
-                    new_stack = 3  # cap at 3
-
-                dest_piece.stack_size = new_stack
-
-                # Remove the moving piece from its original square
-                self.grid[start] = None
-                # Destination Calverymen remains at `end` with updated stack_size
-                return
-
-            # --- Normal move / capture for all other cases ---
             self.grid[end] = piece
             self.grid[start] = None
             piece.position = end
